@@ -1,2 +1,0 @@
- 
- docker exect -t streamlit streamlit run /app/visualization.py --server.port 8501 --server.address 0.0.0.0
