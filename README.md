@@ -14,8 +14,11 @@ The pipeline follows a specialized "Union & State" pattern rather than a direct 
 3. Deduplication via applyInPandasWithState
    We group the unioned stream by symbol. The stateful function performs the following:
    + State Storage: Maintains a persistent state in rocksDB (backed by a Checkpoint) for every symbol. It acts as the seed for the beginning of micro-batch enrichment.
-   + Order: set the unioned DF to be ordered by event_timestamp
-   + Pandas ffill: Set list of columns to be filled. Call ffill to fill out the trade stream messages with the last known value of those columns which exist in reference stream. Since it's ordered by timestamp and fill out by last know reference, it's guaranteed the trade stream messages to be enriched by the reference that comes before them. Without ordering, we could get trade row that's enriched by future reference row since kafka messages is very likely to be out of order
+   + Sort: set the unioned DF to be sorted by event_timestamp
+   + Pandas ffill: Once the data is sorted by timestamp, we have a chronological sequence of rows. However, some rows are "Type: Reference" (containing company info) and some are "Type: Trade" (containing price). We use the Pandas Forward Fill (ffill) operation on the stateful DataFrame:
+        + The Mechanism: Sorting puts the last known "Reference" row immediately before the "Trade" rows that follow it in time.
+        + The Fill: ffill() carries the "Company" and "Sector" values forward from the reference row into the empty columns of the subsequent trade rows.
+        + The Guarantee: Even if a Kafka partition was delayed, once the micro-batch is sorted, the trade "looks back" at the most recent reference data available in that timeline.
    + Output DF: We added column type for both stream DF ("Trade" and "Reference") before. The purpose is so that now we can drop the "Reference" (enrichment info) rows out of this Union DF.
    + Updating state: Update state only when the latest reference timestamp is greater that the reference timestamp that's currently in the state
 4. Output to Delta and Postgres
