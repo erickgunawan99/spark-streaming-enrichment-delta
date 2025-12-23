@@ -23,8 +23,8 @@ The pipeline follows a specialized "Union & State" pattern rather than a direct 
    + Postgres: Serves as the serving layer for the Streamlit dashboard. Running separate pyspark job to incrementally write the raw delta table and aggregation to postgres tables
 
 **Why use union instead of standard join**
-In a standard Spark Stream-Stream Join, even when you set the stateful function outputto update, the join buffer will keep incrementally append the reference for each symbol every micro-batch.
-In result, Spark will join each trade stream with possibly many reference data post initial micro batch and emit many duplicate trade rows. This results in inflated metrics (e.g., tripled trade counts). Deduplication on the foreachbatch is another possible option to solve this, but that would happen after the exploding cartesian join which seems inefficient
+In a standard Spark Stream-Stream Join, even when you set the stateful function output to update, the join buffer will keep incrementally append the reference for each symbol every micro-batch.
+In result, Spark will join each trade row with possibly many reference rows post batch 0 and emit many duplicate trade rows. This results in inflated metrics (e.g., tripled trade counts). Deduplication on the foreachbatch is another possible option to solve this, but that would happen after the exploding cartesian join which seems inefficient
 
 **Delta Maintenance**
 Streaming writes to Delta Lake create many small files (one per micro-batch). A separate maintenance script runs OPTIMIZE and VACUUM to:
