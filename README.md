@@ -21,10 +21,11 @@ The pipeline follows a specialized "Union & State" pattern rather than a direct 
         + The Guarantee: Even if a Kafka partition was delayed, once the micro-batch is sorted, the trade "looks back" at the most recent reference data available in that timeline.
    + Output DF: We added column type for both stream DF ("Trade" and "Reference") before. The purpose is so that now we can drop the "Reference" (enrichment info) rows out of this Union DF.
    + Updating state: Update state only when the latest reference timestamp is greater that the reference timestamp that's currently in the state
+   + <img width="2816" height="1536" alt="Gemini_Generated_Image_o1xtg9o1xtg9o1xt (1)" src="https://github.com/user-attachments/assets/ee54bd76-acc0-4400-b197-0a36c62bf481" />
 4. Output to Delta and Postgres
    + Delta Lake: Serves as the high-scale storage layer.
    + Postgres: Serves as the serving layer for the Streamlit dashboard. Running separate pyspark job to incrementally write the raw delta table and aggregation to postgres tables
-   + <img width="2816" height="1536" alt="Gemini_Generated_Image_o1xtg9o1xtg9o1xt (1)" src="https://github.com/user-attachments/assets/ee54bd76-acc0-4400-b197-0a36c62bf481" />
+ 
 
 **Why use union instead of standard join**
 In a standard Spark Stream-Stream Join, even when you set the stateful function output to update, the join buffer will keep incrementally append the reference for each symbol every micro-batch.
